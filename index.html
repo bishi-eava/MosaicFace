@@ -5823,10 +5823,20 @@ return a / b;`,aie=`
     }
 
     function downloadImage() {
-      const link = document.createElement('a');
-      link.download = 'mosaic_' + (originalFileName || 'image') + '.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const fileName = 'mosaic_' + (originalFileName || 'image') + '.png';
+      canvas.toBlob((blob) => {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (isIOS && navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file] });
+        } else {
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }
+      }, 'image/png');
     }
 
     function goBack() {
