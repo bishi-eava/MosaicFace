@@ -3,6 +3,8 @@
 画像内の顔を自動検出し、モザイクやぼかしをかけるWebアプリ。
 単一のHTMLファイルで動作し、サーバー不要・外部通信なしで完全にブラウザ上で処理します。
 
+[![デモ動画](https://img.youtube.com/vi/aL6MbeWI6I0/0.jpg)](https://youtube.com/shorts/aL6MbeWI6I0)
+
 ## 特徴
 
 - **顔の自動検出** — TinyFaceDetectorによる高速な顔検出（タイル分割による小さい顔の検出にも対応）
