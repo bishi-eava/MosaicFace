@@ -5503,7 +5503,7 @@ return a / b;`,aie=`
     }
 
     function handlePointerDown(e) {
-      if (detectedFaces.length === 0 && !appliedFaces) return;
+      if (detectedFaces.length === 0 || appliedFaces) return;
       e.preventDefault();
       const { dispX, dispY, imgX, imgY } = getImageCoords(e);
       dragState = { startX: imgX, startY: imgY, hitIdx: hitTestFace(dispX, dispY), moved: false };
@@ -5790,6 +5790,7 @@ return a / b;`,aie=`
       detectBtn.disabled = true;
       processBtn.disabled = true;
       downloadBtn.disabled = true;
+      appliedFaces = null;
       ctx.putImageData(originalImageData, 0, 0);
 
       const tempImg = new Image();
