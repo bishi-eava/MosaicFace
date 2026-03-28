@@ -129,7 +129,6 @@
     }
     button:disabled { opacity: 0.35; cursor: not-allowed; }
     button:active:not(:disabled) { transform: scale(0.97); }
-    #detectBtn { background: #e8710a; color: #fff; }
     #processBtn { background: #4a90d9; color: #fff; }
     #downloadBtn { background: #188038; color: #fff; }
     #backBtn {
@@ -5176,8 +5175,10 @@ return a / b;`,aie=`
 </head>
 <body>
   <button id="backBtn">&#x2190; 戻る</button>
-  <h1>MosaicFace</h1>
-  <p class="subtitle">画像をアップロードすると、顔を自動検出してモザイクをかけます</p>
+  <div id="header">
+    <h1>MosaicFace</h1>
+    <p class="subtitle">画像をアップロードすると、顔を自動検出してモザイクをかけます</p>
+  </div>
 
   <div class="container">
     <div id="dropZone">
@@ -5204,7 +5205,6 @@ return a / b;`,aie=`
         </label>
       </div>
       <div class="btn-row">
-        <button id="detectBtn" disabled>顔を検出</button>
         <button id="processBtn" disabled>適用</button>
         <button id="downloadBtn" disabled>ダウンロード</button>
       </div>
@@ -5239,7 +5239,6 @@ return a / b;`,aie=`
     const spinner = $('spinner');
     const controls = $('controls');
     const canvasContainer = $('canvasContainer');
-    const detectBtn = $('detectBtn');
     const processBtn = $('processBtn');
     const downloadBtn = $('downloadBtn');
     const backBtn = $('backBtn');
@@ -5308,7 +5307,6 @@ return a / b;`,aie=`
         try {
           detector = new FaceDetector({ maxDetectedFaces: 20, fastMode: false });
           detectorType = 'native';
-          showStatus('準備完了（ネイティブ顔検出）', 'success');
           return;
         } catch (e) { /* fall through */ }
       }
@@ -5318,11 +5316,9 @@ return a / b;`,aie=`
         return;
       }
 
-      showStatus('顔検出モデルを初期化中...', 'loading');
       try {
         await loadEmbeddedModel();
         detectorType = 'faceapi';
-        showStatus('準備完了', 'success');
       } catch (e) {
         console.error('Model load failed:', e);
         showStatus('モデルの初期化に失敗しました: ' + e.message, 'error');
@@ -5769,13 +5765,14 @@ return a / b;`,aie=`
           controls.classList.add('visible');
           dropZone.style.display = 'none';
           backBtn.classList.add('visible');
+          $('header').style.display = 'none';
+          $('status').style.display = 'none';
           detectedFaces = [];
           appliedFaces = null;
-          detectBtn.disabled = false;
           processBtn.disabled = true;
           downloadBtn.disabled = true;
           overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-          showStatus('画像を読み込みました。「顔を検出」をクリックしてください。');
+          runDetection();
         };
         img.src = ev.target.result;
       };
@@ -5787,7 +5784,7 @@ return a / b;`,aie=`
         showStatus('顔検出の準備ができていません。', 'error');
         return;
       }
-      detectBtn.disabled = true;
+
       processBtn.disabled = true;
       downloadBtn.disabled = true;
       appliedFaces = null;
@@ -5801,15 +5798,13 @@ return a / b;`,aie=`
         const faces = await detectFaces(tempImg);
         if (faces.length === 0) {
           showStatus('顔が検出されませんでした。別の画像をお試しください。', 'error');
-          detectBtn.disabled = false;
+
           return;
         }
         detectedFaces = faces.map(f => ({ ...f, selected: true }));
         drawOverlay();
-        detectBtn.disabled = false;
       } catch (e) {
         showStatus('検出中にエラーが発生しました: ' + e.message, 'error');
-        detectBtn.disabled = false;
         console.error(e);
       }
     }
@@ -5824,6 +5819,17 @@ return a / b;`,aie=`
     }
 
     function applySelectedEffect() {
+      // 適用済み → 検出状態に戻す
+      if (appliedFaces) {
+        detectedFaces = appliedFaces.map(f => ({ ...f }));
+        appliedFaces = null;
+        ctx.putImageData(originalImageData, 0, 0);
+        drawOverlay();
+        processBtn.textContent = '適用';
+        downloadBtn.disabled = true;
+        return;
+      }
+
       const selected = detectedFaces.filter(f => f.selected);
       if (selected.length === 0) return;
 
@@ -5834,7 +5840,8 @@ return a / b;`,aie=`
 
       const label = effectType.value === 'blur' ? 'ぼかし' : 'モザイク';
       showStatus('完了！ ' + selected.length + '件の顔に' + label + 'を適用しました。', 'success');
-      processBtn.disabled = true;
+      processBtn.textContent = '適用解除';
+      processBtn.disabled = false;
       downloadBtn.disabled = false;
     }
 
@@ -5870,9 +5877,12 @@ return a / b;`,aie=`
       controls.classList.remove('visible');
       dropZone.style.display = '';
       backBtn.classList.remove('visible');
+      $('header').style.display = '';
+      $('status').style.display = '';
       fileInput.value = '';
-      detectBtn.disabled = true;
+
       processBtn.disabled = true;
+      processBtn.textContent = '適用';
       downloadBtn.disabled = true;
       showStatus('');
     }
@@ -5899,7 +5909,6 @@ return a / b;`,aie=`
     overlayCanvas.addEventListener('touchend', handlePointerUp);
 
     // Buttons
-    detectBtn.addEventListener('click', runDetection);
     processBtn.addEventListener('click', applySelectedEffect);
     downloadBtn.addEventListener('click', downloadImage);
     backBtn.addEventListener('click', goBack);
