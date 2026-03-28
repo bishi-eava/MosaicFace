@@ -5196,12 +5196,16 @@ return a / b;`,aie=`
           <select id="effectType">
             <option value="mosaic">モザイク</option>
             <option value="blur">ぼかし</option>
+            <option value="emoji">絵文字</option>
           </select>
         </label>
-        <label>
+        <label id="strengthRow">
           <span id="strengthLabel">粗さ</span>:
           <input type="range" id="blockSize" min="5" max="120" value="15" step="5">
           <span class="block-size-val" id="blockSizeVal">15</span><span id="strengthUnit">px</span>
+        </label>
+        <label id="emojiRow" style="display:none">
+          絵文字: <input type="text" id="emojiInput" value="🙂" style="font-size:1.4rem;width:3rem;text-align:center;border:1px solid #ccc;border-radius:4px;padding:2px;">
         </label>
       </div>
       <div class="btn-row">
@@ -5736,6 +5740,19 @@ return a / b;`,aie=`
       drawWithFeather(ctx, tmpCanvas, sx, sy, sw, sh, e);
     }
 
+    // --- Effect: Emoji ---
+    function applyEmoji(ctx, region) {
+      const e = getEllipseRegion(region);
+      const emoji = $('emojiInput').value || '🙂';
+      const fontSize = Math.min(e.rw, e.rh);
+      ctx.save();
+      ctx.font = fontSize + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emoji, e.cx, e.cy);
+      ctx.restore();
+    }
+
     // =========================================================================
     // App Flow (image load → detect → select → apply → download)
     // =========================================================================
@@ -5814,7 +5831,9 @@ return a / b;`,aie=`
       const effect = effectType.value;
       const strength = parseInt(blockSizeInput.value);
       for (const face of faces) {
-        (effect === 'blur' ? applyBlur : applyMosaic)(ctx, face, strength);
+        if (effect === 'emoji') applyEmoji(ctx, face);
+        else if (effect === 'blur') applyBlur(ctx, face, strength);
+        else applyMosaic(ctx, face, strength);
       }
     }
 
@@ -5838,7 +5857,7 @@ return a / b;`,aie=`
       overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
       detectedFaces = [];
 
-      const label = effectType.value === 'blur' ? 'ぼかし' : 'モザイク';
+      const label = { mosaic: 'モザイク', blur: 'ぼかし', emoji: '絵文字' }[effectType.value];
       showStatus('完了！ ' + selected.length + '件の顔に' + label + 'を適用しました。', 'success');
       processBtn.textContent = '適用解除';
       processBtn.disabled = false;
@@ -5916,11 +5935,17 @@ return a / b;`,aie=`
     // Controls
     blockSizeInput.addEventListener('input', () => { blockSizeVal.textContent = blockSizeInput.value; reapplyIfNeeded(); });
     effectType.addEventListener('change', () => {
-      const isBlur = effectType.value === 'blur';
-      strengthLabel.textContent = isBlur ? '強さ' : '粗さ';
-      strengthUnit.textContent = isBlur ? '' : 'px';
+      const v = effectType.value;
+      const isEmoji = v === 'emoji';
+      $('strengthRow').style.display = isEmoji ? 'none' : '';
+      $('emojiRow').style.display = isEmoji ? '' : 'none';
+      if (!isEmoji) {
+        strengthLabel.textContent = v === 'blur' ? '強さ' : '粗さ';
+        strengthUnit.textContent = v === 'blur' ? '' : 'px';
+      }
       reapplyIfNeeded();
     });
+    $('emojiInput').addEventListener('input', reapplyIfNeeded);
 
     // Resize
     window.addEventListener('resize', () => { if (detectedFaces.length > 0) drawOverlay(); });
