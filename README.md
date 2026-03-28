@@ -3,7 +3,7 @@
 画像内の顔を自動検出し、モザイク・ぼかし・絵文字で隠すWebアプリ。
 単一のHTMLファイルで動作し、サーバー不要・外部通信なしで完全にブラウザ上で処理します。
 
-[![デモ動画](https://img.youtube.com/vi/aL6MbeWI6I0/0.jpg)](https://youtube.com/shorts/aL6MbeWI6I0)
+[![デモ動画](https://img.youtube.com/vi/Oc8OF9vtcB4/0.jpg)](https://youtube.com/shorts/Oc8OF9vtcB4)
 
 ## 特徴
 
